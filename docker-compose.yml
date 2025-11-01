@@ -1,0 +1,100 @@
+services:
+  nginx:
+    image: nginx:alpine
+    container_name: ecommerce_nginx
+    ports:
+      - "80:80"
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf
+    depends_on:
+      - products_service
+      - customers_service
+      - orders_service
+    networks:
+      - ecommerce-network
+
+  products_service:  # ← Cambié el guion por guion bajo
+    build: ./services/products
+    container_name: products_service
+    environment:
+      - NODE_ENV=production
+      - PORT=3001
+      - MONGODB_URI=mongodb://products_mongodb:27017/products  # ← Cambiado
+    depends_on:
+      - products_mongodb
+    networks:
+      - ecommerce-network
+
+  customers_service:  # ← Cambié el guion por guion bajo
+    build: ./services/customers
+    container_name: customers_service
+    environment:
+      - NODE_ENV=production
+      - PORT=3002
+      - MONGODB_URI=mongodb://customers_mongodb:27017/customers  # ← Cambiado (puerto 27017 interno)
+    depends_on:
+      - customers_mongodb
+    networks:
+      - ecommerce-network
+
+  orders_service:  # ← Cambié el guion por guion bajo
+    build: ./services/orders
+    container_name: orders_service
+    environment:
+      - NODE_ENV=production
+      - PORT=3003
+      - MONGODB_URI=mongodb://orders_mongodb:27017/orders  # ← Cambiado (puerto 27017 interno)
+      - PRODUCTS_SERVICE_URL=http://products_service:3001
+      - CUSTOMERS_SERVICE_URL=http://customers_service:3002
+    depends_on:
+      - orders_mongodb
+      - products_service
+      - customers_service
+    networks:
+      - ecommerce-network
+
+  # Databases
+  products_mongodb:
+    image: mongo:5.0
+    container_name: products_mongodb
+    ports:
+      - "27017:27017"
+    environment:
+      - MONGO_INITDB_DATABASE=products
+    volumes:
+      - products_data:/data/db
+    networks:
+      - ecommerce-network
+
+  customers_mongodb:
+    image: mongo:5.0
+    container_name: customers_mongodb
+    ports:
+      - "27018:27017"
+    environment:
+      - MONGO_INITDB_DATABASE=customers
+    volumes:
+      - customers_data:/data/db
+    networks:
+      - ecommerce-network
+
+  orders_mongodb:
+    image: mongo:5.0
+    container_name: orders_mongodb
+    ports:
+      - "27019:27017"
+    environment:
+      - MONGO_INITDB_DATABASE=orders
+    volumes:
+      - orders_data:/data/db
+    networks:
+      - ecommerce-network
+
+volumes:
+  products_data:
+  customers_data:
+  orders_data:
+
+networks:
+  ecommerce-network:
+    driver: bridge
