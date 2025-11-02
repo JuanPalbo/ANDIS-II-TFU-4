@@ -46,12 +46,34 @@ services:
       - MONGODB_URI=mongodb://orders_mongodb:27017/orders  # ← Cambiado (puerto 27017 interno)
       - PRODUCTS_SERVICE_URL=http://products_service:3001
       - CUSTOMERS_SERVICE_URL=http://customers_service:3002
+      - REDIS_URL=redis://redis:6379
     depends_on:
       - orders_mongodb
       - products_service
       - customers_service
     networks:
       - ecommerce-network
+
+  redis:
+    image: redis:6-alpine
+    container_name: redis
+    ports:
+      - "6379:6379"
+    networks:
+      - ecommerce-network
+
+  valet_demo:
+    build: ./services/valet-demo
+    container_name: valet_demo
+    depends_on:
+      - nginx
+      - products_service
+      - customers_service
+      - orders_service
+      - redis
+    networks:
+      - ecommerce-network
+    restart: "no"
 
   # Databases
   products_mongodb:
