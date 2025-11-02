@@ -1,3 +1,4 @@
+version: '2.4'
 services:
   nginx:
     image: nginx:alpine
@@ -12,38 +13,44 @@ services:
       - orders_service
     networks:
       - ecommerce-network
+    cpus: 0.25
+    mem_limit: 128m
 
-  products_service:  # ← Cambié el guion por guion bajo
+  products_service:  
     build: ./services/products
     container_name: products_service
     environment:
       - NODE_ENV=production
       - PORT=3001
-      - MONGODB_URI=mongodb://products_mongodb:27017/products  # ← Cambiado
+      - MONGODB_URI=mongodb://products_mongodb:27017/products
     depends_on:
       - products_mongodb
     networks:
       - ecommerce-network
+    cpus: 0.5
+    mem_limit: 512m
 
-  customers_service:  # ← Cambié el guion por guion bajo
+  customers_service:  
     build: ./services/customers
     container_name: customers_service
     environment:
       - NODE_ENV=production
       - PORT=3002
-      - MONGODB_URI=mongodb://customers_mongodb:27017/customers  # ← Cambiado (puerto 27017 interno)
+      - MONGODB_URI=mongodb://customers_mongodb:27017/customers 
     depends_on:
       - customers_mongodb
     networks:
       - ecommerce-network
+    cpus: 0.5
+    mem_limit: 512m
 
-  orders_service:  # ← Cambié el guion por guion bajo
+  orders_service:  
     build: ./services/orders
     container_name: orders_service
     environment:
       - NODE_ENV=production
       - PORT=3003
-      - MONGODB_URI=mongodb://orders_mongodb:27017/orders  # ← Cambiado (puerto 27017 interno)
+      - MONGODB_URI=mongodb://orders_mongodb:27017/orders  
       - PRODUCTS_SERVICE_URL=http://products_service:3001
       - CUSTOMERS_SERVICE_URL=http://customers_service:3002
     depends_on:
@@ -52,6 +59,8 @@ services:
       - customers_service
     networks:
       - ecommerce-network
+    cpus: 0.75
+    mem_limit: 768m
 
   # Databases
   products_mongodb:
@@ -65,6 +74,8 @@ services:
       - products_data:/data/db
     networks:
       - ecommerce-network
+    cpus: 0.75
+    mem_limit: 768m
 
   customers_mongodb:
     image: mongo:5.0
@@ -77,6 +88,8 @@ services:
       - customers_data:/data/db
     networks:
       - ecommerce-network
+    cpus: 0.75
+    mem_limit: 768m
 
   orders_mongodb:
     image: mongo:5.0
@@ -89,6 +102,8 @@ services:
       - orders_data:/data/db
     networks:
       - ecommerce-network
+    cpus: 0.75
+    mem_limit: 768m
 
 volumes:
   products_data:
