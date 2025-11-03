@@ -53,6 +53,7 @@ services:
       - MONGODB_URI=mongodb://orders_mongodb:27017/orders  
       - PRODUCTS_SERVICE_URL=http://products_service:3001
       - CUSTOMERS_SERVICE_URL=http://customers_service:3002
+      - REDIS_URL=redis://redis:6379
       - HTTP_TIMEOUT=3000
       - HTTP_RETRIES=2
       - CB_FAILURE_THRESHOLD=3
@@ -66,6 +67,16 @@ services:
       - ecommerce-network
     cpus: 0.75
     mem_limit: 768m
+
+  redis:
+    image: redis:6-alpine
+    container_name: redis
+    ports:
+      - "6379:6379"
+    networks:
+      - ecommerce-network
+
+  
 
   # Databases
   products_mongodb:
