@@ -1,10 +1,10 @@
 const Order = require('../models/Order');
 const axiosRetry = require('axios-retry');
-const { createAxiosConCB } = require('../lib/circuitBreaker');
+const { createAxiosWithBreaker } = require('../lib/circuitBreaker');
 
 // Clientes axios con breaker y reintentos (todo por env, sin parámetros)
-const { client: httpCustomers } = createAxiosConCB();
-const { client: httpProducts } = createAxiosConCB();
+const { client: httpCustomers } = createAxiosWithBreaker();
+const { client: httpProducts } = createAxiosWithBreaker();
 
 axiosRetry(httpCustomers, {
   retries: Number(process.env.HTTP_RETRIES || 2),
@@ -29,6 +29,10 @@ axiosRetry(httpProducts, {
   },
 });
 
+// Cache-Aside para productos
+const { Cache } = require('../lib/cache');
+const productsCache = new Cache();
+const PRODUCTS_CACHE_TTL_MS = Number(process.env.PRODUCTS_CACHE_TTL_MS || 30000); // 30s por defecto
 exports.createOrder = async (req, res) => {
   try {
     const { customerId, items } = req.body;
@@ -38,9 +42,18 @@ exports.createOrder = async (req, res) => {
 
     let total = 0;
     for (const item of items) {
-  const productRes = await httpProducts.get(`${process.env.PRODUCTS_SERVICE_URL || 'http://localhost:3001'}/products/${item.productId}`);
-      if (!productRes.data) return res.status(404).json({ error: 'Product not found' });
-      total += (productRes.data.price || 0) * item.quantity;
+      const cacheKey = `product:${item.productId}`;
+      let product = productsCache.get(cacheKey);
+
+      if (!product) {
+        const productRes = await httpProducts.get(`${process.env.PRODUCTS_SERVICE_URL || 'http://localhost:3001'}/products/${item.productId}`);
+        if (!productRes.data) return res.status(404).json({ error: 'Product not found' });
+        product = productRes.data;
+        // Guardamos en caché
+        productsCache.set(cacheKey, product, PRODUCTS_CACHE_TTL_MS);
+      }
+
+      total += (product.price || 0) * item.quantity;
     }
 
     const order = new Order({ customerId, items, total });

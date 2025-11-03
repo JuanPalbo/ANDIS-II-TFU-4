@@ -53,6 +53,11 @@ services:
       - MONGODB_URI=mongodb://orders_mongodb:27017/orders  
       - PRODUCTS_SERVICE_URL=http://products_service:3001
       - CUSTOMERS_SERVICE_URL=http://customers_service:3002
+      - HTTP_TIMEOUT=3000
+      - HTTP_RETRIES=2
+      - CB_FAILURE_THRESHOLD=3
+      - CB_RESET_TIMEOUT=10000
+      - PRODUCTS_CACHE_TTL_MS=30000
     depends_on:
       - orders_mongodb
       - products_service
