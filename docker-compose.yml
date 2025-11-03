@@ -62,18 +62,7 @@ services:
     networks:
       - ecommerce-network
 
-  valet_demo:
-    build: ./services/valet-demo
-    container_name: valet_demo
-    depends_on:
-      - nginx
-      - products_service
-      - customers_service
-      - orders_service
-      - redis
-    networks:
-      - ecommerce-network
-    restart: "no"
+  
 
   # Databases
   products_mongodb:
